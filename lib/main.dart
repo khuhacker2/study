@@ -18,7 +18,8 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.red[700],
+        accentColor: Colors.red[700],
       ),
       home: MyHomePage(title: '스투게더'),
     );
@@ -59,40 +60,42 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.white,
-        textTheme: TextTheme(
-          title: TextStyle(color: Colors.black)
+    return Theme(
+      data: Theme.of(context).copyWith(primaryTextTheme: TextTheme(title: TextStyle(
+        color: Colors.black
+      ))),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          backgroundColor: Colors.white,
         ),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Text(
+                'You have pushed the button this many times:',
+              ),
+              Text(
+                '$_counter',
+                style: Theme.of(context).textTheme.display1,
+              ),
+            ],
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _incrementCounter,
+          tooltip: 'Increment',
+          child: Icon(Icons.add),
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          items: <BottomNavigationBarItem>[
+            BottomNavigationBarItem(icon: Icon(Icons.home), title: Text("홈")),
+            BottomNavigationBarItem(icon: Icon(Icons.group), title: Text("스터디그룹")),
+            BottomNavigationBarItem(icon: Icon(Icons.person), title: Text("마이페이지")),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: <BottomNavigationBarItem>[
-          BottomNavigationBarItem(icon: Icon(Icons.home), title: Text("홈")),
-          BottomNavigationBarItem(icon: Icon(Icons.group), title: Text("스터디그룹")),
-          BottomNavigationBarItem(icon: Icon(Icons.person), title: Text("마이페이지")),
-        ],
-      ),
+      )
     );
   }
 }
