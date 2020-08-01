@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stogether/register.dart';
 
 class LoginPage extends StatelessWidget {
   
@@ -50,7 +51,9 @@ class LoginPage extends StatelessWidget {
                   child: RaisedButton(
                     child: Text('회원가입', style: TextStyle(color: Colors.redAccent[700], fontWeight: FontWeight.bold)),
                     color: Colors.white,
-                    onPressed: () => {},
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterPage()));
+                    },
                   )
                 ),
                 Text('Facebook 계정이 있으신가요?', style: TextStyle(color: Colors.white)),
