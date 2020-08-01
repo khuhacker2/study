@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:stogether/login.dart';
 
 void main() => runApp(MyApp());
 
@@ -18,10 +19,11 @@ class MyApp extends StatelessWidget {
         // or simply save your changes to "hot reload" in a Flutter IDE).
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
-        primaryColor: Colors.red[700],
-        accentColor: Colors.red[700],
+        primaryColor: Colors.redAccent[700],
+        accentColor: Colors.redAccent[700],
       ),
-      home: MyHomePage(title: '스투게더'),
+      //home: MyHomePage(title: '스투게더'),
+      home: LoginPage(),
     );
   }
 }
