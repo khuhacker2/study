@@ -1,12 +1,40 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:stogether/createStudygroup.dart';
 import 'package:stogether/login.dart';
 import 'package:stogether/studygroup.dart';
+import 'package:stogether/user.dart';
+import 'data.dart' as data;
 
-void main() => runApp(MyApp());
+User rootUser;
+
+void main() {
+  data.loadData().then((v) {
+    if(data.main.token == null || data.main.token.isEmpty) {
+      runApp(MyApp(initialRoute: '/login'));
+    }
+    else {
+      var encodedClaims = data.main.token.split('.')[1];
+      while(encodedClaims.length % 4 != 0) {
+        encodedClaims += '=';
+      }
+      var claims = String.fromCharCodes(base64.decode(encodedClaims));
+      var claimsObj = json.decode(claims);
+      User.fromNo(claimsObj['no']).then((user) {
+        rootUser = user;
+        runApp(MyApp(initialRoute: '/'));
+      });
+    }
+  });
+}
 
 class MyApp extends StatelessWidget {
-  // This widget is the root of your application.
+
+  final String initialRoute;
+
+  MyApp({Key key, this.initialRoute}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -17,8 +45,12 @@ class MyApp extends StatelessWidget {
         canvasColor: Colors.white,
         hintColor: Colors.grey[500]
       ),
-      home: MyHomePage(title: '스투게더'),
-      //home: LoginPage(),
+      //home: MyHomePage(title: '스투게더'),
+      initialRoute: initialRoute,
+      routes: <String, WidgetBuilder>{
+        '/': (context) => MyHomePage(title: '스투게더'),
+        '/login': (context) => LoginPage()
+      },
     );
   }
 }
@@ -29,7 +61,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState(user: rootUser);
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -38,14 +70,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final int STUDYGROUP = 1;
   final int MYPAGE = 2;
 
-  int _counter = 0;
   int _currentPage = 0;
+  User user;
 
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+  _MyHomePageState({this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -70,6 +98,8 @@ class _MyHomePageState extends State<MyHomePage> {
             BottomNavigationBarItem(icon: Icon(Icons.person), title: Text("마이페이지")),
           ],
           onTap: (index) {
+            if(index == MYPAGE)
+              updateUser();
             setState(() {
               _currentPage = index;
             });
@@ -78,6 +108,15 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       )
     );
+  }
+
+  updateUser() {
+    User.fromNo(rootUser.no).then((user) {
+      rootUser = user;
+      setState(() {
+         this.user = user;     
+      });
+    });
   }
 
   Color getBackgroundColor() {
@@ -206,7 +245,7 @@ class _MyHomePageState extends State<MyHomePage> {
       children: <Widget>[
         Column(
           children: <Widget>[
-            Text('마수현님', style: TextStyle(fontSize: 18)),
+            Text('${user.nickname}님', style: TextStyle(fontSize: 18)),
             Container(
               width: 70,
               height: 70,

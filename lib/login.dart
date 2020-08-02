@@ -1,8 +1,24 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:stogether/register.dart';
+import 'api.dart' as api;
+import 'data.dart' as data;
 
-class LoginPage extends StatelessWidget {
-  
+class LoginPage extends StatefulWidget {
+
+  @override
+  State<StatefulWidget> createState() {
+    return _LoginPageState();
+  }
+
+}
+
+class _LoginPageState extends State<LoginPage> {
+
+  final id = TextEditingController();
+  final password = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -23,6 +39,7 @@ class LoginPage extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16
                   ),
+                  controller: id,
                 ),
                 Container(height: 10),
                 TextField(
@@ -34,6 +51,7 @@ class LoginPage extends StatelessWidget {
                     fontSize: 16
                   ),
                   obscureText: true,
+                  controller: password,
                 ),
                 Container(height: 30),
                 SizedBox(
@@ -41,7 +59,7 @@ class LoginPage extends StatelessWidget {
                   child: RaisedButton(
                     child: Text('로그인', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     color: Colors.redAccent[200],
-                    onPressed: () => {},
+                    onPressed: login,
                   )
                 ),
                 Container(height: 30),
@@ -56,7 +74,7 @@ class LoginPage extends StatelessWidget {
                     },
                   )
                 ),
-                Text('Facebook 계정이 있으신가요?', style: TextStyle(color: Colors.white)),
+                /*Text('Facebook 계정이 있으신가요?', style: TextStyle(color: Colors.white)),
                 SizedBox(
                   width: double.infinity,
                   child: RaisedButton(
@@ -75,13 +93,39 @@ class LoginPage extends StatelessWidget {
                     color: Colors.indigo[600],
                     onPressed: () => {},
                   )
-                ),
+                ),*/
               ]
             ),
           ),
         ),
       )
     );
+  }
+
+  login() {
+    api.post('/token', body: {
+      "id": id.text,
+      "password": password.text
+    }).then((response) {
+      if(response.statusCode == 200) {
+        final result = json.decode(response.body);
+        data.main.token = result['token'];
+        data.saveData().then((v) {
+          Navigator.pushReplacementNamed(context, '/');
+        });
+      }
+      else {
+        showDialog(context: context, builder: (context) {
+          return AlertDialog(
+            title: Text('로그인 실패'),
+            content: Text('아이디 또는 비밀번호를 확인해주세요.'),
+            actions: <Widget>[
+              FlatButton(child: Text('확인'), onPressed: () => Navigator.of(context).pop())
+            ],
+          );
+        });
+      }
+    });
   }
 
 }

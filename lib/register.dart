@@ -1,6 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:stogether/main.dart';
+import 'api.dart' as api;
 
-class RegisterPage extends StatelessWidget {
+class RegisterPage extends StatefulWidget {
+
+  @override
+  State<StatefulWidget> createState() {
+    return RegisterPageState();
+  }
+
+}
+
+class RegisterPageState extends State<RegisterPage> {
+
+final idController = TextEditingController();
+  final pwController = TextEditingController();
+  final pwCheckController = TextEditingController();
+  final nicknameController = TextEditingController();
+
   
   @override
   Widget build(BuildContext context) {
@@ -28,6 +45,7 @@ class RegisterPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16
                       ),
+                      controller: idController,
                     ),
                     Container(height: 10),
                     TextField(
@@ -39,6 +57,7 @@ class RegisterPage extends StatelessWidget {
                         fontSize: 16
                       ),
                       obscureText: true,
+                      controller: pwController,
                     ),
                     Container(height: 10),
                     TextField(
@@ -50,6 +69,7 @@ class RegisterPage extends StatelessWidget {
                         fontSize: 16
                       ),
                       obscureText: true,
+                      controller: pwCheckController,
                     ),
                     Container(height: 10),
                     TextField(
@@ -60,6 +80,7 @@ class RegisterPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 16
                       ),
+                      controller: nicknameController,
                     ),
                     Container(height: 10),
                     SizedBox(
@@ -67,7 +88,39 @@ class RegisterPage extends StatelessWidget {
                       child: RaisedButton(
                         child: Text('회원가입', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                         color: Colors.redAccent[200],
-                        onPressed: () => {},
+                        onPressed: () {
+                          if(pwController.text != pwCheckController.text) {
+                            showDialog(
+                              context: context,
+                              builder: (context) {
+                                return AlertDialog(
+                                  title: Text('오류'),
+                                  content: Text('비밀번호 확인이 일치하지 않습니다!'),
+                                  actions: <Widget>[
+                                    FlatButton(
+                                      child: Text('확인'),
+                                      onPressed: () {
+                                        Navigator.of(context).pop();
+                                      },
+                                    )
+                                  ],
+                                );
+                              }
+                            );
+
+                            return;
+                          }
+                          api.post('/users', body: {
+                            "id": idController.text,
+                            "password": pwController.text,
+                            "nickname": nicknameController.text,
+                          }).then((response) {
+                            if(response.statusCode == 200) {
+                              Navigator.pop(context);
+                              Navigator.pushReplacementNamed(context, '/home');
+                            }
+                          });
+                        },
                       )
                     ),
                   ]
