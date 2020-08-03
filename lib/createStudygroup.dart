@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'api.dart' as api;
+import 'data.dart' as data;
 
 class CreateStudygroup extends StatefulWidget {
   
@@ -14,6 +16,8 @@ class CreateStudygroup extends StatefulWidget {
 class CreateStudygroupState extends State<StatefulWidget> {
 
   int _selectedCategory;
+  final name = TextEditingController();
+  final description = TextEditingController();
   
   @override
   Widget build(BuildContext context) {
@@ -23,9 +27,7 @@ class CreateStudygroupState extends State<StatefulWidget> {
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.add_circle),
-            onPressed: () {
-              
-            },
+            onPressed: postStudygroup,
           )
         ],
       ),
@@ -55,6 +57,7 @@ class CreateStudygroupState extends State<StatefulWidget> {
               fontSize: 16,
               color: Colors.black
             ),
+            controller: name,
           ),
           Container(height: 10),
           TextField(
@@ -67,11 +70,26 @@ class CreateStudygroupState extends State<StatefulWidget> {
               color: Colors.black
             ),
             maxLines: null,
+            controller: description,
           ),
           
         ],
       ),
     ));
+  }
+
+  postStudygroup() {
+    api.post('/studygroups', headers: {
+      "authorization": "Bearer " + data.main.token
+    }, body: {
+      "category": _selectedCategory,
+      "name": name.text,
+      "description": description.text
+    }).then((response) {
+      if(response.statusCode == 200) {
+        Navigator.pop(context);
+      }
+    });
   }
 
 }

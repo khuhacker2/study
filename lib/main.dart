@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:stogether/createStudygroup.dart';
 import 'package:stogether/login.dart';
+import 'package:stogether/models/studygroup.dart';
 import 'package:stogether/studygroup.dart';
-import 'package:stogether/user.dart';
+import 'package:stogether/models/user.dart';
+import 'package:stogether/api.dart' as api;
 import 'data.dart' as data;
 
-User rootUser;
+var rootData = {};
 
 void main() {
   data.loadData().then((v) {
@@ -15,18 +17,25 @@ void main() {
       runApp(MyApp(initialRoute: '/login'));
     }
     else {
-      var encodedClaims = data.main.token.split('.')[1];
-      while(encodedClaims.length % 4 != 0) {
-        encodedClaims += '=';
-      }
-      var claims = String.fromCharCodes(base64.decode(encodedClaims));
-      var claimsObj = json.decode(claims);
-      User.fromNo(claimsObj['no']).then((user) {
-        rootUser = user;
+      getData().then((v) {
         runApp(MyApp(initialRoute: '/'));
       });
     }
   });
+}
+
+Future<void> getData() async {
+  var encodedClaims = data.main.token.split('.')[1];
+  while(encodedClaims.length % 4 != 0) {
+    encodedClaims += '=';
+  }
+  var claims = String.fromCharCodes(base64.decode(encodedClaims));
+  var claimsObj = json.decode(claims);
+  rootData['user'] = await User.fromNo(claimsObj['no']);
+  var response = await api.get('/me/studygroups', headers: {'Authorization': 'Bearer ${data.main.token}'});
+  rootData['myGroups'] = Studygroup.fromJsonArray(response.body);
+
+  return Future.value();
 }
 
 class MyApp extends StatelessWidget {
@@ -61,7 +70,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState(user: rootUser);
+  _MyHomePageState createState() => _MyHomePageState(user: rootData['user']);
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -111,8 +120,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   updateUser() {
-    User.fromNo(rootUser.no).then((user) {
-      rootUser = user;
+    User.fromNo(rootData['user'].no).then((user) {
+      rootData['user'] = user;
       setState(() {
          this.user = user;     
       });
@@ -159,21 +168,22 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Container(padding: EdgeInsets.all(10), child: Text('나의 스터디그룹')),
               Container(height: 150, child: ListView.builder(
-                itemCount: 100,
+                itemCount: rootData['myGroups'].length,
                 itemBuilder: (BuildContext context, int index) {
+                  Studygroup group = rootData['myGroups'][index];
                   return SizedBox(width: 120, height: 120, child: Stack(
                     children: <Widget>[
                       Positioned.fill(child: Column(
                         children: <Widget>[
                           Image.network('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTF7Q8uVAHz_rPqFiY1vfQrKXTtRsZnAV92N30IG0IkPfeV0BUC', width: 100, height: 100, fit: BoxFit.fill,),
-                          Text('코딩클럽')
+                          Text(group.name)
                         ],
                       )),
                       Positioned.fill(child: Material(
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => Studygroup(group: {'title': '코딩클럽'},)));
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: {'title': group.name},)));
                           },
                         )),
                       ),
@@ -218,7 +228,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => Studygroup(group: {'title': '코딩클럽'},)));
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: {'title': '코딩클럽'},)));
                           },
                         )),
                       ),

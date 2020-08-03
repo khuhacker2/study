@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:stogether/article.dart';
 
-class Studygroup extends StatelessWidget {
+class StudygroupPage extends StatelessWidget {
 
   final group;
 
-  Studygroup({Key key, this.group}) : super(key: key);
+  StudygroupPage({Key key, this.group}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

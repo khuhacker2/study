@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'api.dart' as api;
+import 'package:stogether/api.dart' as api;
 
 class User {
 
