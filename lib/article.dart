@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-class Article extends StatefulWidget {
+class ArticlePage extends StatefulWidget {
 
   final String title;
 
-  Article({Key key, this.title}) : super(key: key);
+  ArticlePage({Key key, this.title}) : super(key: key);
   
   @override
-  _ArticleState createState() => _ArticleState();
+  _ArticlePageState createState() => _ArticlePageState();
 
 }
 
-class _ArticleState extends State<Article> {
+class _ArticlePageState extends State<ArticlePage> {
   
   @override
   Widget build(BuildContext context) {

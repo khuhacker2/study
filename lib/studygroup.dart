@@ -1,19 +1,43 @@
 import 'package:flutter/material.dart';
 import 'package:stogether/article.dart';
+import 'package:stogether/models/article.dart';
+import 'package:stogether/models/studygroup.dart';
+import 'package:stogether/models/user.dart';
+import 'package:stogether/dateformat.dart';
 
-class StudygroupPage extends StatelessWidget {
+import 'api.dart' as api;
 
-  final group;
+class StudygroupPage extends StatefulWidget {
+
+  final Studygroup group;
 
   StudygroupPage({Key key, this.group}) : super(key: key);
 
   @override
+  State<StatefulWidget> createState() {
+    return _StudygroupPageState(group: group);
+  }
+
+}
+
+class _StudygroupPageState extends State<StudygroupPage> {
+
+  final Studygroup group;
+  List<Article> articles = List<Article>();
+  List<User> authors = List<User>();
+
+  _StudygroupPageState({this.group}) {
+    getArticles();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    var now = DateTime.now();
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(group['title']),
+          title: Text(group.name),
           bottom: TabBar(
             tabs: <Widget>[
               //Tab(text: '홈'),
@@ -26,8 +50,10 @@ class StudygroupPage extends StatelessWidget {
           children: <Widget>[
             //Column(),
             Container(color: Colors.grey[300], child: SizedBox.expand(child: ListView.builder(
-              itemCount: 20,
+              itemCount: articles.length,
               itemBuilder: (ctx, index) {
+                var article = articles[index];
+                var author = authors[index];
                 return Card(child: Stack(children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,10 +75,10 @@ class StudygroupPage extends StatelessWidget {
                             Expanded(child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: <Widget>[
-                                Text('마수현'),
-                                Text('17분 전', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                Text(author.nickname),
+                                Text(relativeDate(now, article.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                                 Container(height: 10),
-                                Text('오늘의 공부법\n사실 공부하는데 있어서 유명한 공부법을 따라하는 것은 중요하지 않습니다. 누구나 자신에게 맞는 공부법이 있고 맞지 않는 공부법이 있기 때문이죠. 그렇다면 자신에게 맞는 공부법을 찾는 것이 중요합니다. 자신에게 맞는 공부법을 찾기 위해서는 최소한의 지능이 있어야합니다. 결론은 공부를 잘하기 위해서는 타고나야합니다.'),
+                                Text(article.content),
                               ],
                             ))
                           ],
@@ -69,7 +95,7 @@ class StudygroupPage extends StatelessWidget {
                   ),
                   Positioned.fill(child: Material(color: Colors.transparent, child: InkWell(
                     onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => Article(title: group['title'])));
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => ArticlePage(title: group.name)));
                     },
                   )))
                 ]));
@@ -80,6 +106,25 @@ class StudygroupPage extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  getArticles() async {
+    var response = await api.get('/studygroups/${group.no}/articles');
+    if(response.statusCode != 200) {
+      return Future.value();
+    }
+    
+    var articles = Article.fromJsonArray(response.body);
+    var authors = List<User>();
+    for(Article article in articles) {
+      User user = await User.fromNo(article.author);
+      authors.add(user);
+    }
+
+    setState(() {
+      this.articles = articles;
+      this.authors = authors;
+    });
   }
 
 }

@@ -182,9 +182,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       Positioned.fill(child: Material(
                         color: Colors.transparent,
                         child: InkWell(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: {'title': group.name},)));
-                          },
+                          onTap: () => showStudygroup(group),
                         )),
                       ),
                     ],
@@ -228,7 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         color: Colors.transparent,
                         child: InkWell(
                           onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: {'title': '코딩클럽'},)));
+                            //Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: {'title': '코딩클럽'},)));
                           },
                         )),
                       ),
@@ -278,5 +276,9 @@ class _MyHomePageState extends State<MyHomePage> {
         )
       ],
     ));
+  }
+
+  showStudygroup(group) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: group)));
   }
 }
