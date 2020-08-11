@@ -4,6 +4,7 @@ import 'package:stogether/models/article.dart';
 import 'package:stogether/models/studygroup.dart';
 import 'package:stogether/models/user.dart';
 import 'package:stogether/dateformat.dart';
+import 'package:stogether/write.dart';
 
 import 'api.dart' as api;
 
@@ -22,9 +23,12 @@ class StudygroupPage extends StatefulWidget {
 
 class _StudygroupPageState extends State<StudygroupPage> {
 
+  static const BOARD = 0;
+
   final Studygroup group;
   List<Article> articles = List<Article>();
   List<User> authors = List<User>();
+  
 
   _StudygroupPageState({this.group}) {
     getArticles();
@@ -49,58 +53,70 @@ class _StudygroupPageState extends State<StudygroupPage> {
         body: TabBarView(
           children: <Widget>[
             //Column(),
-            Container(color: Colors.grey[300], child: SizedBox.expand(child: ListView.builder(
-              itemCount: articles.length,
-              itemBuilder: (ctx, index) {
-                var article = articles[index];
-                var author = authors[index];
-                return Card(child: Stack(children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Container(padding: EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 6), child: Row(
-                          children: [
-                            Container(
-                              width: 40,
-                              height: 40,
-                              margin: EdgeInsets.only(right: 10),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  fit: BoxFit.fill,
-                                  image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
-                                )
+            Scaffold(
+              body: Container(color: Colors.grey[300], child: SizedBox.expand(child: ListView.builder(
+                itemCount: articles.length,
+                itemBuilder: (ctx, index) {
+                  var article = articles[index];
+                  var author = authors[index];
+                  return Card(child: Stack(children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(padding: EdgeInsets.only(top: 12, left: 12, right: 12, bottom: 6), child: Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                margin: EdgeInsets.only(right: 10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  image: DecorationImage(
+                                    fit: BoxFit.fill,
+                                    image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
+                                  )
+                                ),
                               ),
-                            ),
-                            Expanded(child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: <Widget>[
-                                Text(author.nickname),
-                                Text(relativeDate(now, article.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                                Container(height: 10),
-                                Text(article.content),
-                              ],
-                            ))
-                          ],
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                        )),
-                        Container(
-                          padding: EdgeInsets.only(right: 12, bottom: 12),
-                          child: Text('댓글 5개', textAlign: TextAlign.right, style: TextStyle(
-                            color: Colors.grey[500],
-                            fontSize: 12
-                          ),)
-                        )
-                      ]
-                  ),
-                  Positioned.fill(child: Material(color: Colors.transparent, child: InkWell(
-                    onTap: (){
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => ArticlePage(title: group.name)));
-                    },
-                  )))
-                ]));
-              },
-            ))),
+                              Expanded(child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: <Widget>[
+                                  Text(author.nickname),
+                                  Text(relativeDate(now, article.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                                  Container(height: 10),
+                                  Text(article.content),
+                                ],
+                              ))
+                            ],
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                          )),
+                          Container(
+                            padding: EdgeInsets.only(right: 12, bottom: 12),
+                            child: Text('댓글 5개', textAlign: TextAlign.right, style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12
+                            ),)
+                          )
+                        ]
+                    ),
+                    Positioned.fill(child: Material(color: Colors.transparent, child: InkWell(
+                      onTap: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ArticlePage(title: group.name)));
+                      },
+                    )))
+                  ]));
+                },
+              ))),
+              floatingActionButton: FloatingActionButton(
+                child: Icon(Icons.edit),
+                onPressed: () {
+                  Navigator.push<bool>(context, MaterialPageRoute(builder: (context) => WritePage(group: group))).then((result) {
+                    if(result) {
+                      getArticles();
+                    }
+                  });
+                },
+              ),
+            ),
             ChatPage(),
           ],
         ),
@@ -126,6 +142,18 @@ class _StudygroupPageState extends State<StudygroupPage> {
       this.authors = authors;
     });
   }
+
+  /*Widget buildFAB(BuildContext context) {
+    if(DefaultTabController.of(context).index != BOARD)
+      return null;
+
+    return FloatingActionButton(
+      child: Icon(Icons.edit),
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => WritePage(group: group)));
+      },
+    );
+  }*/
 
 }
 
