@@ -1,20 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:stogether/dateformat.dart';
+import 'package:stogether/models/article.dart';
+import 'package:stogether/models/comment.dart';
+import 'package:stogether/models/user.dart';
+import 'package:flutter/scheduler.dart';
+
+import 'package:stogether/api.dart' as api;
+import 'package:stogether/data.dart' as data;
 
 class ArticlePage extends StatefulWidget {
 
   final String title;
+  final Article article;
+  final List<Comment> comments;
+  final Map<int, User> users;
 
-  ArticlePage({Key key, this.title}) : super(key: key);
+  ArticlePage({Key key, this.title, this.article, this.comments, this.users}) : super(key: key);
   
   @override
-  _ArticlePageState createState() => _ArticlePageState();
+  _ArticlePageState createState() => _ArticlePageState(article: article, comments: comments, users: users);
 
 }
 
 class _ArticlePageState extends State<ArticlePage> {
+
+  final scroll = ScrollController();
+  final commentContent = TextEditingController();
+
+  Article article;
+  List<Comment> comments;
+  Map<int, User> users;
+
+  _ArticlePageState({this.article, this.comments, this.users});
   
   @override
   Widget build(BuildContext context) {
+    var now = DateTime.now();
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -25,6 +46,7 @@ class _ArticlePageState extends State<ArticlePage> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           Expanded(child: SingleChildScrollView(
+            controller: scroll,
             scrollDirection: Axis.vertical,
             child: Column(
               children: <Widget>[
@@ -45,17 +67,17 @@ class _ArticlePageState extends State<ArticlePage> {
                     Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text('마수현'),
-                        Text('17분 전', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+                        Text(users[article.author].nickname),
+                        Text(relativeDate(now, article.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                         Container(height: 10),
-                        Text('오늘의 공부법\n사실 공부하는데 있어서 유명한 공부법을 따라하는 것은 중요하지 않습니다. 누구나 자신에게 맞는 공부법이 있고 맞지 않는 공부법이 있기 때문이죠. 그렇다면 자신에게 맞는 공부법을 찾는 것이 중요합니다. 자신에게 맞는 공부법을 찾기 위해서는 최소한의 지능이 있어야합니다. 결론은 공부를 잘하기 위해서는 타고나야합니다.'),
+                        Text(article.content),
                       ],
                     ))
                   ],
                   crossAxisAlignment: CrossAxisAlignment.start,
                 )),
                 Divider(height: 0)
-              ]..addAll(buildComments(context))
+              ]..addAll(buildComments(context, now))
             ),
           )),
           Container(
@@ -66,13 +88,17 @@ class _ArticlePageState extends State<ArticlePage> {
               children: <Widget>[
                 SizedBox(width: 10),
                 Expanded(child: TextField (
+                  controller: commentContent,
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.only(bottom: 6),
                     hintText: '댓글 입력',
                   ),
                 )),
                 SizedBox(width: 10),
-                Icon(Icons.send, size: 30, color: Theme.of(context).primaryColor),
+                IconButton(
+                  icon: Icon(Icons.send, size: 30, color: Theme.of(context).primaryColor),
+                  onPressed: postComment,
+                ),
                 SizedBox(width: 10),
               ],
             ),
@@ -82,10 +108,10 @@ class _ArticlePageState extends State<ArticlePage> {
     );
   }
 
-  List<Widget> buildComments(BuildContext context) {
+  List<Widget> buildComments(BuildContext context, DateTime now) {
     List<Widget> result = [];
 
-    for(int i = 0; i < 10; i++) {
+    for(Comment comment in comments) {
       result.add(Divider(height: 0));
       result.add(Container(padding: EdgeInsets.all(12), child: Row(
         children: [
@@ -104,10 +130,10 @@ class _ArticlePageState extends State<ArticlePage> {
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('마수현'),
-              Text('17분 전', style: TextStyle(color: Colors.grey[500], fontSize: 12)),
+              Text(users[comment.author].nickname),
+              Text(relativeDate(now, comment.createdAt), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
               Container(height: 10),
-              Text('팩트를 말하시다니 정말 비겁하십니다.'),
+              Text(comment.content),
             ],
           ))
         ],
@@ -116,6 +142,52 @@ class _ArticlePageState extends State<ArticlePage> {
     }
 
     return result;
+  }
+
+  Future<void> refreshData() async {
+    Article article = await Article.fromNo(this.article.no);
+    var response = await api.get('/articles/${article.no}/comments');
+    List<Comment> comments = Comment.fromJsonArray(response.body);
+    
+    List<int> userNos = List<int>();
+    userNos.add(article.author);
+    for(Comment comment in comments) {
+      if(!userNos.contains(comment.author))
+        userNos.add(comment.author);
+    }
+
+    Map<int, User> users = Map<int, User>();
+    for(int no in userNos) {
+      User user = await User.fromNo(no);
+      users[no] = user;
+    }
+
+    this.setState(() {
+      this.article = article;
+      this.comments = comments;
+      this.users = users;
+
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        scroll.animateTo(scroll.position.maxScrollExtent, duration: Duration(milliseconds: 200), curve: Curves.easeOut);
+      });
+      
+    });
+
+    return Future.value();
+  }
+
+  postComment() {
+    api.post('/comments', headers: {
+      'Authorization': 'Bearer ${data.main.token}'
+    }, body: {
+      "article": article.no,
+      "content": commentContent.text
+    }).then((response) {
+      if(response.statusCode == 200) {
+        refreshData();
+      }
+    });
+    commentContent.clear();
   }
 
 }

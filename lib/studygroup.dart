@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:stogether/article.dart';
 import 'package:stogether/models/article.dart';
+import 'package:stogether/models/comment.dart';
 import 'package:stogether/models/studygroup.dart';
 import 'package:stogether/models/user.dart';
 import 'package:stogether/dateformat.dart';
@@ -28,6 +29,7 @@ class _StudygroupPageState extends State<StudygroupPage> {
   final Studygroup group;
   List<Article> articles = List<Article>();
   List<User> authors = List<User>();
+  List<int> commentCounts = List<int>();
   
 
   _StudygroupPageState({this.group}) {
@@ -91,7 +93,7 @@ class _StudygroupPageState extends State<StudygroupPage> {
                           )),
                           Container(
                             padding: EdgeInsets.only(right: 12, bottom: 12),
-                            child: Text('댓글 5개', textAlign: TextAlign.right, style: TextStyle(
+                            child: Text('댓글 ${commentCounts[index]}개', textAlign: TextAlign.right, style: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 12
                             ),)
@@ -99,9 +101,7 @@ class _StudygroupPageState extends State<StudygroupPage> {
                         ]
                     ),
                     Positioned.fill(child: Material(color: Colors.transparent, child: InkWell(
-                      onTap: (){
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ArticlePage(title: group.name)));
-                      },
+                      onTap: () => showArticle(article.no),
                     )))
                   ]));
                 },
@@ -132,15 +132,45 @@ class _StudygroupPageState extends State<StudygroupPage> {
     
     var articles = Article.fromJsonArray(response.body);
     var authors = List<User>();
+    var commentCounts = List<int>();
     for(Article article in articles) {
       User user = await User.fromNo(article.author);
       authors.add(user);
+      response = await api.get('/articles/${article.no}/comments');
+      var comments = Comment.fromJsonArray(response.body);
+      commentCounts.add(comments.length);
     }
 
     setState(() {
       this.articles = articles;
       this.authors = authors;
+      this.commentCounts = commentCounts;
     });
+  }
+
+  showArticle(int no) async {
+    Article article = await Article.fromNo(no);
+    List<int> userNos = List<int>();
+    userNos.add(article.author);
+
+    var response = await api.get('/articles/${article.no}/comments');
+    if(response.statusCode != 200) {
+      return;
+    }
+
+    List<Comment> comments = Comment.fromJsonArray(response.body);
+    for(Comment comment in comments) {
+      if(!userNos.contains(comment.author))
+        userNos.add(comment.author);
+    }
+
+    Map<int, User> users = Map<int, User>();
+    for(int no in userNos) {
+      User user = await User.fromNo(no);
+      users[no] = user;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ArticlePage(title: group.name, article: article, comments: comments, users: users)));
   }
 
   /*Widget buildFAB(BuildContext context) {
