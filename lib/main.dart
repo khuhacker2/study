@@ -279,6 +279,6 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   showStudygroup(group) {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: group)));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => StudygroupPage(group: group, myNo: user.no,)));
   }
 }
