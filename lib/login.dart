@@ -5,6 +5,8 @@ import 'package:stogether/register.dart';
 import 'api.dart' as api;
 import 'data.dart' as data;
 
+import 'package:stogether/main.dart' as main;
+
 class LoginPage extends StatefulWidget {
 
   @override
@@ -111,7 +113,9 @@ class _LoginPageState extends State<LoginPage> {
         final result = json.decode(response.body);
         data.main.token = result['token'];
         data.saveData().then((v) {
-          Navigator.pushReplacementNamed(context, '/');
+          main.getData().then((v) {
+            Navigator.pushReplacementNamed(context, '/');
+          });
         });
       }
       else {

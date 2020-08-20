@@ -271,7 +271,10 @@ class _MyHomePageState extends State<MyHomePage> {
         RaisedButton(
           child: Text('로그아웃'),
           onPressed: () {
-
+            data.main.token = null;
+            data.saveData().then((v) {
+              Navigator.of(context).pushReplacementNamed('/login');
+            });
           },
         )
       ],
