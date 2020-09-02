@@ -1,10 +1,13 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'api.dart' as api;
 import 'data.dart' as data;
 
 class CreateStudygroup extends StatefulWidget {
   
-  
+  final imagePicker = ImagePicker();
 
   @override
   CreateStudygroupState createState() {
@@ -13,9 +16,10 @@ class CreateStudygroup extends StatefulWidget {
 
 }
 
-class CreateStudygroupState extends State<StatefulWidget> {
+class CreateStudygroupState extends State<CreateStudygroup> {
 
   int _selectedCategory;
+  String _imageUrl = '';
   final name = TextEditingController();
   final description = TextEditingController();
   
@@ -72,10 +76,39 @@ class CreateStudygroupState extends State<StatefulWidget> {
             maxLines: null,
             controller: description,
           ),
-          
+          Container(height: 10),
+          GestureDetector(
+            onTap: () async {
+              final file = await widget.imagePicker.getImage(source: ImageSource.gallery);
+              final ext = file.path.split('.').last;
+              var type = '';
+
+              if(ext == 'png')
+                type = 'image/png';
+              else if(ext == 'jpg' || ext == 'jpeg')
+                type = 'image/jpeg';
+              
+              final res = await api.post('/images', headers: {
+                "authorization": "Bearer " + data.main.token,
+                "Content-Type": type
+              }, body: await file.readAsBytes(), rawBody: true);
+
+              setState(() {
+                _imageUrl = json.decode(res.body)['path'];      
+              });
+            },
+            child: buildImage(),
+          )
         ],
       ),
     ));
+  }
+
+  buildImage() {
+    if(_imageUrl.isEmpty)
+      return Image.asset("assets/no_image.png", width: 100, height: 100, fit: BoxFit.fill);
+    else
+      return Image.network(api.SERVER_URL + _imageUrl, width: 100, height: 100, fit: BoxFit.fill);
   }
 
   postStudygroup() {
@@ -84,7 +117,8 @@ class CreateStudygroupState extends State<StatefulWidget> {
     }, body: {
       "category": _selectedCategory,
       "name": name.text,
-      "description": description.text
+      "description": description.text,
+      "image": _imageUrl
     }).then((response) {
       if(response.statusCode == 200) {
         Navigator.pop(context);

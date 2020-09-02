@@ -12,7 +12,7 @@ connect({
   String token,
   int group
 }) {
-  channel = IOWebSocketChannel.connect("ws://192.168.0.2:8080/ws");
+  channel = IOWebSocketChannel.connect("ws://192.168.75.231:8080/ws");
   channel.stream.listen((message) {
     print(message);
     var data = json.decode(message);

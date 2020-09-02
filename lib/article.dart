@@ -7,6 +7,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'package:stogether/api.dart' as api;
 import 'package:stogether/data.dart' as data;
+import 'package:stogether/studygroup.dart';
 
 class ArticlePage extends StatefulWidget {
 
@@ -60,7 +61,7 @@ class _ArticlePageState extends State<ArticlePage> {
                         shape: BoxShape.circle,
                         image: DecorationImage(
                           fit: BoxFit.fill,
-                          image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
+                          image: buildPictureImage(users[article.author])
                         )
                       ),
                     ),
@@ -123,7 +124,7 @@ class _ArticlePageState extends State<ArticlePage> {
               shape: BoxShape.circle,
               image: DecorationImage(
                 fit: BoxFit.fill,
-                image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
+                image: buildPictureImage(users[comment.author])
               )
             ),
           ),
@@ -189,5 +190,12 @@ class _ArticlePageState extends State<ArticlePage> {
     });
     commentContent.clear();
   }
+
+  buildPictureImage(User user) {
+  if(user == null || user.picture == null || user.picture.isEmpty)
+    return AssetImage('assets/no_picture.png');
+  else
+    return NetworkImage(api.SERVER_URL + user.picture);
+}
 
 }

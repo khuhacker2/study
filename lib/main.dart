@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:stogether/createStudygroup.dart';
 import 'package:stogether/login.dart';
 import 'package:stogether/models/studygroup.dart';
@@ -12,6 +13,7 @@ import 'data.dart' as data;
 var rootData = {};
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   data.loadData().then((v) {
     if(data.main.token == null || data.main.token.isEmpty) {
       runApp(MyApp(initialRoute: '/login'));
@@ -65,12 +67,14 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
+  final imagePicker = ImagePicker();
+
   MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
 
   @override
-  _MyHomePageState createState() => _MyHomePageState(user: rootData['user']);
+  _MyHomePageState createState() => _MyHomePageState(user: rootData['user'], groups: rootData['myGroups']);
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -81,8 +85,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   int _currentPage = 0;
   User user;
+  List<Studygroup> groups = List<Studygroup>();
+  List<Studygroup> rank = List<Studygroup>();
 
-  _MyHomePageState({this.user});
+  _MyHomePageState({this.user, this.groups});
 
   @override
   Widget build(BuildContext context) {
@@ -107,6 +113,12 @@ class _MyHomePageState extends State<MyHomePage> {
             BottomNavigationBarItem(icon: Icon(Icons.person), title: Text("마이페이지")),
           ],
           onTap: (index) {
+            if(index == HOME)
+              updateGroups();
+
+            if(index == STUDYGROUP)
+              updateRank();
+
             if(index == MYPAGE)
               updateUser();
             setState(() {
@@ -117,6 +129,26 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       )
     );
+  }
+
+  updateGroups() {
+    api.get('/me/studygroups', headers: {'Authorization': 'Bearer ${data.main.token}'}).then((response) {
+      rootData['myGroups'] = Studygroup.fromJsonArray(response.body);
+
+      setState(() {
+        groups = rootData['myGroups'];
+      });
+    });
+  }
+
+  updateRank() {
+    api.get('/studygroups/rank', headers: {'Authorization': 'Bearer ${data.main.token}'}).then((response) {
+      var rank = Studygroup.fromJsonArray(response.body);
+
+      setState(() {
+        this.rank = rank;
+      });
+    });
   }
 
   updateUser() {
@@ -168,14 +200,14 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Container(padding: EdgeInsets.all(10), child: Text('나의 스터디그룹')),
               Container(height: 150, child: ListView.builder(
-                itemCount: rootData['myGroups'].length,
+                itemCount: groups.length,
                 itemBuilder: (BuildContext context, int index) {
-                  Studygroup group = rootData['myGroups'][index];
+                  Studygroup group = groups[index];
                   return SizedBox(width: 120, height: 120, child: Stack(
                     children: <Widget>[
                       Positioned.fill(child: Column(
                         children: <Widget>[
-                          Image.network('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTF7Q8uVAHz_rPqFiY1vfQrKXTtRsZnAV92N30IG0IkPfeV0BUC', width: 100, height: 100, fit: BoxFit.fill,),
+                          buildStudyImage(group),
                           Text(group.name)
                         ],
                       )),
@@ -212,14 +244,14 @@ class _MyHomePageState extends State<MyHomePage> {
             children: <Widget>[
               Container(padding: EdgeInsets.all(10), child: Text('최고 인기 스터디그룹')),
               Container(height: 150, child: ListView.builder(
-                itemCount: 100,
+                itemCount: rank.length,
                 itemBuilder: (BuildContext context, int index) {
                   return SizedBox(width: 120, height: 120, child: Stack(
                     children: <Widget>[
                       Positioned.fill(child: Column(
                         children: <Widget>[
-                          Image.network('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTF7Q8uVAHz_rPqFiY1vfQrKXTtRsZnAV92N30IG0IkPfeV0BUC', width: 100, height: 100, fit: BoxFit.fill,),
-                          Text('코딩클럽')
+                          buildStudyImage(rank[index]),
+                          Text(rank[index].name)
                         ],
                       )),
                       Positioned.fill(child: Material(
@@ -254,17 +286,43 @@ class _MyHomePageState extends State<MyHomePage> {
         Column(
           children: <Widget>[
             Text('${user.nickname}님', style: TextStyle(fontSize: 18)),
-            Container(
-              width: 70,
-              height: 70,
-              margin: EdgeInsets.only(top: 6),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  fit: BoxFit.fill,
-                  image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
-                )
+            GestureDetector(
+              child: Container(
+                width: 70,
+                height: 70,
+                margin: EdgeInsets.only(top: 6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  image: DecorationImage(
+                    fit: BoxFit.fill,
+                    image: buildPictureImage()
+                  ),
+                ),
               ),
+              onTap: () async {
+                final file = await widget.imagePicker.getImage(source: ImageSource.gallery);
+                final ext = file.path.split('.').last;
+                var type = '';
+
+                if(ext == 'png')
+                  type = 'image/png';
+                else if(ext == 'jpg' || ext == 'jpeg')
+                  type = 'image/jpeg';
+                
+                var res = await api.post('/images', headers: {
+                  "authorization": "Bearer " + data.main.token,
+                  "Content-Type": type
+                }, body: await file.readAsBytes(), rawBody: true);
+
+                res = await api.put('/me', headers: {
+                  "authorization": "Bearer " + data.main.token,
+                }, body: {'picture': json.decode(res.body)['path']});
+
+                rootData['user'] = User.fromJson(res.body);
+                setState(() {
+                  this.user = rootData['user'];
+                });
+              },
             )
           ]
         ),
@@ -279,6 +337,20 @@ class _MyHomePageState extends State<MyHomePage> {
         )
       ],
     ));
+  }
+
+  buildStudyImage(Studygroup group) {
+    if(group.image == null || group.image.isEmpty)
+      return Image.asset('assets/no_image.png', width: 100, height: 100, fit: BoxFit.fill);
+    else
+      return Image.network(api.SERVER_URL + group.image, width: 100, height: 100, fit: BoxFit.fill);
+  }
+
+  buildPictureImage() {
+    if(user == null || user.picture == null || user.picture.isEmpty)
+      return AssetImage('assets/no_picture.png');
+    else
+      return NetworkImage(api.SERVER_URL + user.picture);
   }
 
   showStudygroup(group) {

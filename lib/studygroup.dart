@@ -81,7 +81,7 @@ class _StudygroupPageState extends State<StudygroupPage> {
                                   shape: BoxShape.circle,
                                   image: DecorationImage(
                                     fit: BoxFit.fill,
-                                    image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
+                                    image: buildPictureImage(authors[index])
                                   )
                                 ),
                               ),
@@ -235,7 +235,7 @@ class _ChatPageState extends State<ChatPage> {
 
             if(talker.no == widget.myNo)
               return Container(padding: EdgeInsets.only(top: 10, bottom: 10),child: _MyBubble(message: message));
-            return Container(padding: EdgeInsets.only(top: 10, bottom: 10),child: _ReceivedSpeech(nickname: talker.nickname, message: message));
+            return Container(padding: EdgeInsets.only(top: 10, bottom: 10),child: _ReceivedSpeech(user: talker, message: message));
           },
           scrollDirection: Axis.vertical,
           controller: scroll,
@@ -288,10 +288,10 @@ class _ChatPageState extends State<ChatPage> {
 
 class _ReceivedSpeech extends StatelessWidget {
 
-  final String nickname;
+  final User user;
   final String message;
 
-  _ReceivedSpeech({Key key, this.nickname, this.message}) : super(key: key);
+  _ReceivedSpeech({Key key, this.user, this.message}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -306,14 +306,14 @@ class _ReceivedSpeech extends StatelessWidget {
             shape: BoxShape.circle,
             image: DecorationImage(
               fit: BoxFit.fill,
-              image: NetworkImage('https://i.stack.imgur.com/34AD2.jpg')
+              image: buildPictureImage(user),
             )
           ),
         ),
         Expanded(child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text(nickname),
+            Text(user.nickname),
             _Bubble(message: message)
           ],
         ))
@@ -377,4 +377,11 @@ class _MyBubble extends StatelessWidget {
     );
   }
 
+}
+
+buildPictureImage(User user) {
+  if(user == null || user.picture == null || user.picture.isEmpty)
+    return AssetImage('assets/no_picture.png');
+  else
+    return NetworkImage(api.SERVER_URL + user.picture);
 }
